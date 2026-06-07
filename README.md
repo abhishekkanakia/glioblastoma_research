@@ -24,7 +24,7 @@ Following professional clinical consultation, this workflow evaluates a curated 
 The project is executed sequentially across 7 key analytical phases:
 ### Step 1: Cohort Characterization
 * **Objective:** Clean raw datasets, isolate the 7 core high-risk genes (`ATRX`, `TERT`, `BRAF`, `EGFR`, `TP53`, `IDH1`, `IDH2`), filter out missing clinical endpoints, and validate baseline demographics against published GBM landmark literature.
-* **Outputs:** Cleaned master dataset (`gbm_cleaned_merged_data.csv`), descriptive patient baseline characteristics table (Table 1), and target mutation frequency plots.
+* **Outputs:** Cleaned master dataset (`gbm_merged_data.csv`), descriptive patient baseline characteristics table (Table 1), and target mutation frequency plots.
 
 ### Step 2: Single-Mutation Survival Analysis
 * **Objective:** Isolate individual mutation groups against wildtype cohorts to estimate survival probabilities over time.
