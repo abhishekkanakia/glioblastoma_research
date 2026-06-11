@@ -9,6 +9,8 @@ gbm_tcga_pub2013/
 *.xlsx
 *.txt
 
+STEP_1/gbm_merged_data.csv
+
 # OS Generated Files
 desktop.ini
 .DS_Store
