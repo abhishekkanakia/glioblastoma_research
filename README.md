@@ -1,159 +1,167 @@
-# GBM Confidence-Enhanced Survival Inference Project
+# GBM Multi-Paradigm Genomic Discovery & Survival Inference Framework
 
-An advanced genomic data pipeline and statistical framework designed to evaluate the independent prognostic value of high-risk genetic alterations in Glioblastoma (GBM). This project bridges public genomic infrastructure (TCGA via cBioPortal) with multi-paradigm analytical workflows to assess how individual and combined molecular biomarkers impact overall survival (OS) and disease-free survival (DFS).
+An advanced bioinformatic pipeline and non-linear causal framework designed to screen, isolate, and validate high-integrity genomic biomarkers in Glioblastoma Multiforme (GBM). This project bridges public high-throughput sequencing data (TCGA cohort) with an automated analytical workflow that tracks survival trajectories across three distinct methodologies: linear multivariable regression, propensity-score matched causal inference, and machine learning ensemble forests.
 
-The framework features a unique **Evidence Integration Framework** that scores and classifies biomarkers into distinct clinical confidence tiers based on their consistency across traditional survival models, causal propensity score adjustments, and machine learning ensemble algorithms.
+The pipeline features a unique **Cross-Paradigm Evidence Integration Framework** that strips out background passenger mutations and maps candidate loci into clinical confidence tiers based on mathematical convergence across all modeling tracks.
 
 ---
 
-## Clinical Scope & Analytical Dataset
+## Project Architecture & Two-Track Design
 
-The analysis evaluates a curated panel of genomic alterations known to drive malignant progression, dictate diagnostic boundaries, or emerge from data-driven discovery loops in high-grade gliomas.
+To decouple baseline historical control targets from genome-wide discovery arrays, the project is divided into two entirely separate, isolated experimental channels:
 
-### Target Cohort Core Properties
-* **Total Analytical Sample Size ($N$):** 108 unique patients (TCGA Glioblastoma cohort) who passed structural filtering (verified survival outcomes and baseline clinical records where $\text{OS\_MONTHS} > 0$).
-* **Patient-Level Aggregation:** All genetic alterations are evaluated strictly **across unique patients** rather than individual tissue samples. Multi-variant entries for a single gene are compressed into binary indicators ($1 = \text{Mutated}$, $0 = \text{Wild-Type}$) using a logical ceiling (`> 0`) to prevent sample-inflation bias.
+1. **`EXPERIMENT_1_CANDIDATE_PANEL`**
+   * **Scope:** Focused evaluation restricted solely to the historical clinical anchor candidates (`EGFR`, `IDH1`, `TP53`, `BRAF`) to map traditional associative baselines.
+2. **`EXPERIMENT_2_DISCOVERY_SCREEN`**
+   * **Scope:** An automated, high-dimensional screening engine that processes the **top 100 most frequently mutated genes** across patients through the complete 7-step pipeline to extract novel prognostic drivers.
+
+---
+
+## Dataset & Clinical Cohort Scope
+
+* **Total Analytical Sample Size ($N$):** 253 unique glioblastoma patients successfully isolated following stringent multi-tier quality control (removal of missing survival vectors, truncation of negative timelines, and clinical tracking verification).
+* **Baseline Cohort Characteristics:** Mean diagnostic age of $61.8 \pm 12.7$ years; gender distribution of 64.4% Male ($N=163$) and 35.6% Female ($N=90$). MGMT promoter methylation arrays were excluded due to missingness thresholds exceeding structural tolerances.
+* **Patient-Level Penetrance Contraction:** Multi-sample sequence duplicates are compressed into binary representations ($1 = \text{Mutated}$, $0 = \text{Wildtype}$) mapped **per unique patient**. Mutation penetrance rankings are evaluated across independent individuals to prevent multi-biopsy sample inflation.
 
 ---
 
 ## Full 7-Step Operational Framework
 
-The project is structured into standalone pipeline scripts that handle data flow sequentially from initial screening to consensus tiering:
-
 ```text
  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
  │  Screening   │ ──► │    Step 1    │ ──► │    Step 2    │ ──► │    Step 3    │
- │ High-Dim Cox │     │ Cohort Table │     │ Kaplan-Meier │     │ Adjusted Cox │
+ │ Genome Wide  │     │ Cohort Table │     │ Kaplan-Meier │     │ Adjusted Cox │
  └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
                                                                         │
  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐             │
  │    Step 7    │ ◄── │    Step 6    │ ◄── │    Step 5    │ ◄───────────┘
- │ Final Ledger │     │ ML Forest    │     │ Co-Mutations │
+ │ Final Ledger │     │  ML Forest   │     │ Co-Mutations │
  └──────────────┘     └──────────────┘     └──────────────┘
- ```
+```
 
-### High-Dimensional Biomarker Screening
-* **Objective:** Automatically evaluate a broad screening pool of the top 100 highest-frequency mutated genes across the cohort.
-* **Methodology:** Automatically builds a wide genomic matrix, incorporates core clinical features (`AGE`, `SEX_NUM`) to control for baseline differences, filters out markers with critical boundary constraints ($\le 1$ mutant case), and outputs a sorted list of all discovered prognostic signals based on multivariate significance testing.
+# Genome-Wide Biomarker & Survival Analysis Framework
 
-### Step 1: Cohort Characterization & Merging
-* **Objective:** Clean raw datasets, isolate target panels, filter missing clinical endpoints, and validate baseline demographics.
-* **Outputs:** Generates the master processed evaluation table (`gbm_merged_data.csv`), descriptive patient baseline characteristics table (Table 1), and patient mutation frequency plots (`mutation_frequencies.png`).
+---
 
-### Step 2: Single-Mutation Survival Analysis
-* **Objective:** Stratify individual mutation arms against wildtype cohorts to estimate survival probabilities over time.
-* **Methodology:** Fits non-parametric survival functions using the Kaplan-Meier estimator:
+## Pipeline Workflow Steps
+
+### Step 1: Genome-Wide Feature Extraction & Merging
+* **Objective:** Ingest somatic variant mutation matrices, isolate the top 100 highest-penetrance targets across unique patients, and merge binary genetic vectors with clinical master logs.
+* **Core Outputs:** * `top_100_genes_list.csv` (the immediate quick-read frequency summary)
+  * `gbm_merged_data.csv` (the wide analytical matrix spanning 253 patients and 102 active feature variables)
+
+### Step 2: Unadjusted Kaplan-Meier Stratification
+* **Objective:** Compute baseline non-parametric survival function estimates across mutated vs. wildtype populations:
 $$\hat{S}(t) = \prod_{t_i \le t} \left(1 - \frac{d_i}{n_i}\right)$$
-Evaluates unadjusted curve separation significance using log-rank hypothesis testing. 
-* **Outputs:** Independent, print-ready survival charts (`survival_plots/[Gene]_survival_curve.png`) with integrated statistical bounding boxes.
+* **Methodology:** Evaluates raw survival trajectory splitting using non-parametric log-rank tests. Uncovers initial high-risk signals (**STAG2** median OS 5.2 mo. vs. 13.7 mo. wildtype; $p = 0.0004$) and protective thresholds (**IDH1** median OS 33.7 mo. vs. 13.0 mo. wildtype; $p = 0.0023$).
 
-### Step 3: Adjusted Cox Proportional Hazards Modeling
-* **Objective:** Measure independent prognostic survival tracking while controlling for clinical confounding variables.
-* **Methodology:** Fits unadjusted and multivariate Cox Proportional Hazards models adjusting for patient Age and Sex.
-* **Outputs:** Computes exponentiated regression coefficients (Hazard Ratios, HR) and Wald p-values (`step3_hazard_ratios_table.csv`) mapped visually on a master comparative regression forest plot (`cox_survival_forest_plot.png`).
+### Step 3: Multivariable Adjusted Cox Proportional Hazards
+* **Objective:** Isolate independent genomic risk weights while controlling for continuous clinical age metrics and binary sex variables.
+* **Methodology:** Semiparametric Cox regression tracking calculated Hazard Ratios (HR) and Wald statistics. Unmasks masked signatures where demographic factors act as suppressors (e.g., **ADAMTS12** adjusts to $HR = 0.32, p = 0.04927$; **TEX15** adjusts to $HR = 2.46, p = 0.03383$).
 
-### Step 4: Propensity Score Enhanced Analysis (Causal Inference)
-* **Objective:** Verify that primary biomarker survival associations remain robust after eliminating demographic sample assignment bias.
-* **Methodology:** Estimates propensity scores $P(\text{Mutation} \mid X)$ using logistic regression models based on baseline clinical features. Computes **Inverse Probability of Treatment Weighting (IPTW)** stabilized weight vectors, clips outlier variance at the 99th percentile, verifies covariate balance using the Standardized Mean Difference ($\text{SMD} < 0.10$), and fits weighted Cox models with robust sandwich variance estimators.
-* **Outputs:** Generates common support overlap plots (`propensity_plots/[Gene]_overlap_plot.png`) and causal hazard ledgers (`step4_iptw_results_table.csv`).
+### Step 4: Causal Inference via Propensity Score Weighting (IPTW)
+* **Objective:** Neutralize patient assignment bias and demographic imbalances to isolate true biological causal survival hazards.
+* **Methodology:** Computes logistic regression propensity scores $P(\text{Mutation} \mid \text{Age}, \text{Sex})$ to generate Inverse Probability of Treatment Weighting (IPTW) stabilization vectors. Resolves severe linear misspecification errors, rehabilitating the independent causal value of **IDH1** ($HR = 0.35, p = 8.35 \times 10^{-9}$) under perfect baseline covariate balancing.
 
-### Step 5: Co-Mutation Interaction Analysis
-* **Objective:** Identify phenotypic combinations of mutations that alter clinical risk profiles more severely than single alterations alone.
-* **Methodology:** Partitions the cohort into four mutually exclusive groups: `Neither` (Baseline Control), `Gene A Only`, `Gene B Only`, and `Both` (Synchronous Co-mutation). Evaluates interaction risk tiers using multivariate Cox models and four-arm KM curves for targets like `TP53+EGFR`, `TP53+IDH1`, `ATRX+IDH1`, and `TERT+EGFR`.
-* **Outputs:** Multi-arm survival visualizations (`comutation_plots/[GeneA]_[GeneB]_survival_curve.png`) and interaction hazard metrics (`step5_comutation_hazard_ratios.csv`).
+### Step 5: Stratified Co-Mutation Interaction Analysis
+* **Objective:** Evaluate synergistic, multiplicative phenotypic combinations versus additive or mutually exclusive genomic layouts.
+* **Methodology:** Partitions patient groups into four mutually exclusive survival tracks. Reveals deep mutual exclusivity constraints for catastrophic structural lines (e.g., **TP53+STAG2** presents an absolute cohort density of $N = 0$, indicating a biologically non-viable cellular profile).
 
-### Step 6: Survival Machine Learning
-* **Objective:** Leverage non-linear machine learning models to capture highly complex genomic feature interactions and rank biomarker predictive importance.
-* **Methodology:** Trains an ensemble **Random Survival Forest (RSF)** model (250 estimators, log-rank splitting criteria) optimized for structured time-to-event outcomes. Extracts variable importance scores using **Permutation Feature Importance (VIMP)** across 10 repeated shuffles to evaluate mean Concordance Index (C-index) drops.
-* **Outputs:** Predictive ranking spreadsheets (`step6_rsf_feature_importances.csv`) and horizontal classification charts (`ml_plots/rsf_feature_importances.png`).
+### Step 6: Non-Linear Machine Learning Modeling
+* **Objective:** Capture high-dimensional epistatic feature architectures and rank biomarker predictive value without linear constraints.
+* **Methodology:** Trains an ensemble Random Survival Forest (RSF) of 250 survival decision trees utilizing log-rank splitting parameters. Measures independent feature value via 10x repeated shuffling Permutation Feature Importance (VIMP) scores based on global C-index drops.
+* **Model Accuracy Baseline:** Global Concordance Index (C-index) = 0.7883.
 
-### Step 7: Confidence Framework Integration
-* **Objective:** Consolidate statistical and predictive metrics across all preceding analytical paradigms to assign a final clinical reproducibility tier to each biomarker.
-* **Outputs:** The project's final consensus ledger (`step7_final_biomarker_ledger.csv`), which ranks biomarkers based on hazard ratio stability and statistical sign convergence.
+### Step 7: Cross-Paradigm Consensus Integration
+* **Objective:** Execute an automated inner-outer join combining stats, causal logic, and machine learning weights to clean out passenger variants and construct the definitive project ledger (`step7_final_biomarker_ledger.csv`).
 
 ---
 
-## Integrative Confidence Tiering Matrix
+## Final Cross-Paradigm Consistency Ledger
 
-To resolve data limitations and ensure clear translation to publication manuscripts, the pipeline assigns each candidate biomarker to an explicit performance tier using robust multi-paradigm criteria:
+The framework maps features into three strict clinical confidence categories based on criteria checking multivariable linear limits ($p < 0.05$), causal propensity validation ($p < 0.05$), and forest predictive scores ($VIMP \ge 0.003$):
 
 ```text
-                           [ Biomarker Data Entry ]
-                                      │
-                                      ▼
-             ┌──────────────────────────────────────────────────┐
-             │    (Cox_p < 0.05 OR IPTW_p_value < 0.05)         │─── YES ──► Tier 1: High Confidence
-             │             AND RSF_VIMP > 0.01                  │
-             └──────────────────────────────────────────────────┘
-                                      │
-                                      │ NO
-                                      ▼
-             ┌──────────────────────────────────────────────────┐
-             │            IPTW_p_value < 0.05 OR                │─── YES ──► Tier 2: Moderate Confidence
-             │               RSF_VIMP > 0.001                   │
-             └──────────────────────────────────────────────────┘
-                                      │
-                                      │ NO
-                                      ▼
-                       Tier 3: Low Confidence / Outlier
+                            [ 100-Biomarker Data Entry ]
+                                         │
+                                         ▼
+              ┌──────────────────────────────────────────────────┐
+              │      (Cox_p < 0.05 AND RSF_VIMP >= 0.003)        │─── YES ──► Tier 1: High Confidence
+              │          AND (No IPTW OR IPTW_p < 0.05)          │
+              └──────────────────────────────────────────────────┘
+                                         │
+                                         │ NO
+                                         ▼
+              ┌──────────────────────────────────────────────────┐
+              │           IPTW_p < 0.05 OR RSF_VIMP >= 0.005     │─── YES ──► Tier 2: Moderate Confidence
+              │                     OR Cox_p < 0.05              │
+              └──────────────────────────────────────────────────┘
+                                         │
+                                         │ NO
+                                         ▼
+                       Tier 3: Low Confidence Background / Passenger
 ```
 
-### Core Pipeline Discoveries Summary Table
+# Top-Tier Discoveries Consolidated Matrix (Experiment 2 Extraction)
 
-| Biomarker | Cox HR | Cox $p$ | IPTW HR | IPTW $p$ | RSF VIMP | Assigned Performance Tier |
+| Biomarker | Cox HR | Cox p | IPTW HR | IPTW p | RSF VIMP | Assigned Consensus Performance Tier |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`EGFR`** | 1.7270 | 0.0301 | 1.5262 | 0.0856 | 0.0633 | **Tier 1: High Confidence** |
-| **`AGE`** | - | - | - | - | 0.2027 | **Tier 2: Moderate Confidence** |
-| **`IDH1`** | 0.3608 | 0.0687 | 0.3098 | 0.0000 | - | **Tier 2: Moderate Confidence** |
-| **`FBN3`** | - | - | - | - | 0.0125 | **Tier 2: Moderate Confidence** |
-| **`ADAMTS12`** | - | - | - | - | 0.0121 | **Tier 2: Moderate Confidence** |
-| **`TP53`** | 0.6708 | 0.1088 | - | - | - | **Tier 3: Low Confidence / Outlier** |
+| STAG2 | 4.11878 | 0.00036 | 3.83594 | 0.00000 | 0.02177 | Tier 1: High Confidence Discovery |
+| TEX15 | 2.46277 | 0.03383 | 2.33007 | 0.00811 | 0.00514 | Tier 1: High Confidence Discovery |
+| DNAH2 | 2.31728 | 0.03259 | ---- | ---- | 0.00388 | Tier 1: High Confidence Discovery |
+| PCLO | 1.56391 | 0.09389 | ---- | ---- | 0.01630 | Tier 2: Moderate Confidence Candidate |
+| EGFR | ---- | ---- | ---- | ---- | 0.01374 | Tier 2: Moderate Confidence Candidate |
+| IDH1 | 0.44260 | 0.12057 | 0.35006 | 0.00000 | 0.01234 | Tier 2: Moderate Confidence Candidate |
+| MUC16 | ---- | ---- | ---- | ---- | 0.00687 | Tier 2: Moderate Confidence Candidate |
+| FGD5 | 1.52107 | 0.21358 | ---- | ---- | 0.00603 | Tier 2: Moderate Confidence Candidate |
+| DNAH8 | 1.92280 | 0.12624 | ---- | ---- | 0.00542 | Tier 2: Moderate Confidence Candidate |
+| TP53 | ---- | ---- | ---- | ---- | 0.00540 | Tier 2: Moderate Confidence Candidate |
+| ADAMTS12 | 0.31578 | 0.04927 | 0.41503 | 0.13878 | 0.00255 | Tier 2: Moderate Confidence Candidate |
+| TTN | ---- | ---- | ---- | ---- | 0.00357 | Tier 3: Low Confidence Background Passenger |
 
 ---
 
-## Project Structure & Directory Layout
+## Repository Layout & Subdirectory Structure
 
-```text
-├── README.md                                 # Master documentation and workflow ledger
-├── SCREENING/                                # High-dimensional automated screening directory
-│   ├── screening_automated_loop.py           # Iterative multivariate Cox engine
-│   ├── top_100_genes_list.csv                # Extracted highest-frequency target panel
-│   └── step6_genome_wide_screening_results.csv # Resulting p-value sorted discovery matrix
-├── STEP_1/                                   # Cohort Characterization & Merging
-│   ├── cohort_characterization.py            # Demographic parsing and parsing script
-│   └── mutation_frequencies.png              # Cohort gene frequency horizontal chart
-├── STEP_2/                                   # Single-Mutation Kaplan-Meier Analysis
-│   ├── single_mutation_km.py                 # Core non-parametric survival curves execution
-│   ├── step2_survival_summary_table.csv      # Unadjusted median survival and log-rank p-values
-│   └── survival_plots/                       # Generated KM plots directory
-├── STEP_3/                                   # Adjusted Cox PH Regression Modeling
-│   ├── cox_adjusted_models.py                # Semiparametric multivariate regression script
-│   ├── step3_hazard_ratios_table.csv         # Regression coefficient matrix
-│   └── cox_survival_forest_plot.png          # High-res comparative forest plot chart
-├── STEP_4/                                   # Propensity Score Enhanced Causal Analysis
-│   ├── causal_iptw_pipeline.py               # Population re-weighting and SMD balance engine
-│   ├── step4_iptw_results_table.csv          # Causal hazard ratios output
-│   └── propensity_plots/                     # Kernel Density overlap support visualizations
-├── STEP_5/                                   # Co-Mutation Interaction Analysis
-│   ├── comutation_interaction_split.py       # 4-group stratification script
-│   ├── step5_comutation_hazard_ratios.csv    # Interaction hazard ratios table
-│   └── comutation_plots/                     # Multi-trajectory survival function charts
-├── STEP_6/                                   # Machine Learning Survival Prediction
-│   ├── random_survival_forest.py             # RSF ensemble modeling script
-│   ├── step6_rsf_feature_importances.csv     # VIMP mean C-index drop mapping matrix
-│   └── ml_plots/                             # Permutation importance horizontal bar graphs
-└── STEP_7/                                   # Evidence Integration Framework Synthesis
-    ├── final_evidence_integration.py         # Consensus merging and tier classification script
-    └── step7_final_biomarker_ledger.csv      # Master project ledger
-
+```plaintext
+GBM_project/
+├── EXPERIMENT_1_CANDIDATE_PANEL/             # Isolated baseline historical candidate tracks
+│   ├── STEP_1_COHORT_DESCRIPTIVES/           # 4-gene penetrance and baseline cohort data
+│   ├── STEP_2_3_COX_MODELS/                  # Basic unadjusted/adjusted linear modeling
+│   ├── STEP_4_CAUSAL_IPTW/                   # Propensity calculation folders
+│   └── STEP_5_CO_MUTATION_STRAT/             # Target candidate pair interaction testing
+│
+└── EXPERIMENT_2_DISCOVERY_SCREEN/            # High-dimensional automated discovery pipeline
+    ├── STEP_1/                               # Dynamic top 100 genome extraction & matrix generation
+    │   ├── SCRIPTS/step1_analysis.py         
+    │   ├── top_100_genes_list.csv            # The immediate quick-read results asset
+    │   └── gbm_merged_data.csv               # Wide 102-column master data table
+    ├── STEP_2/                               # Unadjusted Kaplan-Meier & Log-Rank math
+    │   ├── step2_km_logrank_results.csv      # Complete unadjusted 100-gene summary metrics
+    │   └── plots/km_curves/                  
+    ├── STEP_3/                               # Adjusted Multivariable Cox Regressions
+    │   ├── step3_cox_regression_results.csv  # 100-gene linear covariate adjustment matrix
+    │   └── plots/forest_plots/               
+    ├── STEP_4/                               # Stabilized Causal Propensity Scoring
+    │   └── step4_iptw_causal_results.csv     # Causal hazard ratios for target hits
+    ├── STEP_5/                               # Interaction & Stratified Co-Mutation
+    │   ├── step5_comutation_results.csv      
+    │   └── plots/comutation_curves/          # Includes structural mutual exclusivity charts
+    ├── STEP_6/                               # Machine Learning Random Survival Forests
+    │   ├── SCRIPTS/step6_rsf.py              # 250-tree scikit-survival training routine
+    │   ├── step6_rsf_feature_importances.csv # Complete 102-feature VIMP spreadsheet
+    │   └── ml_plots/                         # Horizon validation visualization graphics
+    └── STEP_7/                               # Evidence Integration Framework Integration
+        ├── SCRIPTS/step7_integration.py      # Automated pipeline ledger builder
+        └── step7_final_biomarker_ledger.csv  # Finalized publication ledger tracking all 100 targets
 ```
 
-## Technical Setup & Dependencies
+## Environment Setup & Scientific Dependencies
 
-To execute this pipeline, ensure your Python environment includes the following scientific and statistical libraries:
+To execute or scale either experimental track within this framework, ensure your local Python workspace contains the following specific operational dependencies:
 
-* **`scikit-survival`** ($\ge 0.22.0$): For Random Survival Forest models and structured survival arrays.
-* **`lifelines`** ($\ge 0.27.0$): For non-parametric Kaplan-Meier fitting and Cox Proportional Hazards modeling.
-* **`statsmodels`** ($\ge 0.14.0$): For logistic regression propensity score calculations.
-* **`scikit-learn`** ($\ge 1.3.0$): For permutation importance calculations.
-* **`pandas`**, **`numpy`**, **`matplotlib`**, **`seaborn`**: For primary matrix data structures and visual plotting.
+* **scikit-survival ($\ge 0.22.0$):** Powers the high-performance non-linear Random Survival Forest and structures time-to-event outcomes.
+* **lifelines ($\ge 0.27.0$):** For non-parametric Kaplan-Meier object calculations and semiparametric Cox baseline regressions.
+* **statsmodels ($\ge 0.14.0$):** Handles the binary logistic regression engines to extract propensity weights.
+* **scikit-learn ($\ge 1.3.0$):** Executes the structural feature permutation shuffles.
+* **pandas, numpy, matplotlib:** Standard array manipulation and vector graphic processing.
